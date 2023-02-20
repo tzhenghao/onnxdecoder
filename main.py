@@ -21,12 +21,14 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    onnx_graph = onnx.load(INPUT_ONNX_FILE_PATH)
-    onnx_dict = MessageToDict(onnx_graph, preserving_proto_field_name=True)
+    onnx_file = onnx.load(INPUT_ONNX_FILE_PATH)
+    onnx_dict = MessageToDict(onnx_file, preserving_proto_field_name=True)
     # onnx_json = json.loads(s)
 
     onnx_metadata = deepcopy(onnx_dict)
     del onnx_metadata["graph"]
+
+    onnx_graph = onnx_dict["graph"]
 
     click.secho("ONNX metadata: {}".format(onnx_metadata), fg="yellow")
     logger.debug("ONNX dict: {onnx_dict}".format(onnx_dict=onnx_dict))
@@ -44,7 +46,10 @@ def main():
         output_path.mkdir(parents=True, exist_ok=True)
 
         with open(output_path.joinpath("output-metadata.json"), "w") as f:
-            json.dump(onnx_dict, f, indent=INDENT_SIZE)
+            json.dump(onnx_metadata, f, indent=INDENT_SIZE)
+
+        with open(output_path.joinpath("output-graph.json"), "w") as f:
+            json.dump(onnx_graph, f, indent=INDENT_SIZE)
 
         with open(output_path.joinpath("output-all.json"), "w") as f:
             json.dump(onnx_dict, f, indent=INDENT_SIZE)
