@@ -9,7 +9,7 @@ import onnx
 from pydantic.dataclasses import dataclass
 from google.protobuf.json_format import MessageToJson
 
-enable_output_file = False
+enable_output_file = True
 INPUT_ONNX_FILE_PATH = "resnet50-v2-7.onnx"
 OUTPUT_JSON_PATH = "output.json"
 INDENT_SIZE = 2
