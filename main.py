@@ -25,7 +25,7 @@ def main():
     logger.info(onnx_json)
 
     if enable_output_file:
-        msg = "enable_output_file is enabled, printing output to {output_file}".format(  # noqa: E501
+        msg = "enable_output_file is enabled, printing output to {output_file}...".format(  # noqa: E501
             output_file=OUTPUT_JSON_PATH
         )
         click.secho(
