@@ -4,8 +4,8 @@
 
 set -euo pipefail
 
-echo "Git checkout develop..."
-git checkout develop
+echo "Git checkout main..."
+git checkout main
 echo "Pulling latest changes..."
 git pull
 
