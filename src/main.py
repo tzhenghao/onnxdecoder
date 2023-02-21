@@ -9,9 +9,8 @@ import click
 import onnx
 
 enable_output_files = True
-INPUT_ONNX_FILE_PATH = "resnet50-v2-7.onnx"
-OUTPUT_JSON_DIRECTORY = "."
-OUTPUT_JSON_PATH = "output2.json"
+INPUT_ONNX_FILE_PATH = "../assets/resnet50-v2-7.onnx"
+OUTPUT_JSON_DIRECTORY = "outputs"
 INDENT_SIZE = 2
 
 logger = logging.getLogger(__name__)
