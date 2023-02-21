@@ -4,6 +4,7 @@ import logging
 import os
 from copy import deepcopy
 from pathlib import Path
+from typing import Any
 
 # Third party imports
 import click
@@ -21,17 +22,32 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    onnx_file = onnx.load(INPUT_ONNX_FILE_PATH)
-    onnx_dict = MessageToDict(onnx_file, preserving_proto_field_name=True)
-    # onnx_json = json.loads(s)
+    onnx_model = onnx.load(INPUT_ONNX_FILE_PATH)
 
-    onnx_metadata = deepcopy(onnx_dict)
-    del onnx_metadata["graph"]
+    click.secho(
+        "IR version: {ir_version}".format(ir_version=onnx_model.ir_version),
+        fg="yellow",
+    )
 
-    onnx_graph = onnx_dict["graph"]
+    onnx_graph_nodes = []
+    onnx_name_to_inputs: dict[str, Any] = {}
+    onnx_name_to_outputs: dict[str, Any] = {}
 
-    click.secho("ONNX metadata: {}".format(onnx_metadata), fg="yellow")
-    logger.debug("ONNX dict: {onnx_dict}".format(onnx_dict=onnx_dict))
+    for node in onnx_model.graph.node:
+        click.secho("name: {name}".format(name=node.name), fg="yellow")
+        click.secho(
+            "op_type: {op_type}".format(op_type=node.op_type), fg="yellow"
+        )
+        click.secho("input: {input}".format(input=node.input), fg="yellow")
+        click.secho("output: {output}".format(output=node.output), fg="yellow")
+
+        onnx_graph_nodes.append({"name": node.name, "op_type": node.op_type})
+        onnx_name_to_inputs[node.name] = [
+            input_val for input_val in node.input
+        ]
+        onnx_name_to_outputs[node.name] = [
+            output_val for output_val in node.output
+        ]
 
     if enable_output_files:
         msg = "enable_output_files is enabled, printing output to {output_directory}...".format(  # noqa: E501
@@ -45,14 +61,20 @@ def main():
         output_path = Path(OUTPUT_JSON_DIRECTORY).resolve()
         output_path.mkdir(parents=True, exist_ok=True)
 
-        with open(output_path.joinpath("output-metadata.json"), "w") as f:
-            json.dump(onnx_metadata, f, indent=INDENT_SIZE)
+        with open(
+            output_path.joinpath("output-model-outputs.json"), "w"
+        ) as output_file:
+            json.dump(onnx_name_to_outputs, output_file, indent=INDENT_SIZE)
 
-        with open(output_path.joinpath("output-graph.json"), "w") as f:
-            json.dump(onnx_graph, f, indent=INDENT_SIZE)
+        with open(
+            output_path.joinpath("output-model-inputs.json"), "w"
+        ) as output_file:
+            json.dump(onnx_name_to_inputs, output_file, indent=INDENT_SIZE)
 
-        with open(output_path.joinpath("output-all.json"), "w") as f:
-            json.dump(onnx_dict, f, indent=INDENT_SIZE)
+        with open(
+            output_path.joinpath("output-model-nodes.json"), "w"
+        ) as output_file:
+            json.dump(onnx_graph_nodes, output_file, indent=INDENT_SIZE)
 
 
 if __name__ == "__main__":
