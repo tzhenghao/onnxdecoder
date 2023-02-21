@@ -191,5 +191,7 @@ setup(
     # issues, where the source is hosted, where to say thanks to the package
     # maintainers, and where to support the project financially. The key is
     # what's used to render the link text on PyPI.
-    project_urls={},  # Optional
+    project_urls={
+        "Source Code": "https://github.com/tzhenghao/onnxdecoder"
+    },  # Optional
 )
