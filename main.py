@@ -1,16 +1,12 @@
 # Standard imports
 import json
 import logging
-import os
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 # Third party imports
 import click
 import onnx
-from google.protobuf.json_format import MessageToDict
-from pydantic.dataclasses import dataclass
 
 enable_output_files = True
 INPUT_ONNX_FILE_PATH = "resnet50-v2-7.onnx"
