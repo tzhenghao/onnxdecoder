@@ -148,21 +148,17 @@ setup(
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/discussions/install-requires-vs-requirements/
     install_requires=[
-        "black==22.3.0",
+        "black==23.1.0",
         "click==8.1.3",
         "colorama==0.4.6",
         "flake8==6.0.0",
-        "isort==5.10.1",
+        "isort==5.12.0",
         "mypy==0.950",
         "numpy==1.23.0",
         "onnx==1.13.0",
         "onnxruntime==1.13.1",
         "pydantic==1.10.4",
-        "tf2onnx==1.13.0",
         "tomlkit==0.11.6",
-        "torch==1.13.1",
-        "torchaudio==0.13.1",
-        "torchvision==0.14.1",
     ],  # Optional
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
@@ -178,8 +174,7 @@ setup(
     # },
     # If there are data files included in your packages that need to be
     # installed, specify them here.
-    package_data={
-    },
+    package_data={},
     # Entry points. The following would provide a command called `sample` which
     # executes the function `main` from this package when invoked:
     # entry_points={  # Optional
@@ -196,6 +191,5 @@ setup(
     # issues, where the source is hosted, where to say thanks to the package
     # maintainers, and where to support the project financially. The key is
     # what's used to render the link text on PyPI.
-    project_urls={  # Optional
-    },
+    project_urls={},  # Optional
 )
