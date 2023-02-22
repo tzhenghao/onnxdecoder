@@ -62,7 +62,7 @@ def cli(
     enable_output_json,
     json_indent_size,
 ):
-    onnx_model = onnx.load(DEFAULT_INPUT_ONNX_FILE_PATH)
+    onnx_model = onnx.load(input_onnx_file)
     click.secho(
         "IR version: {ir_version}".format(ir_version=onnx_model.ir_version),
         fg="yellow",
@@ -110,44 +110,50 @@ def parse_onnx_graph(cli_context: CLIContext):
 
 
 def generate_outputs(cli_config: CLIConfig, cli_context: CLIContext):
-    if cli_config.enable_output_json:
-        msg = "enable_output_json is enabled, printing output to {output_directory}...".format(  # noqa: E501
-            output_directory=DEFAULT_OUTPUT_JSON_DIRECTORY
-        )
+    if not cli_config.enable_output_json:
         click.secho(
-            msg,
-            fg="green",
+            "enable_output_json is disabled, returning early...",
+            fg="yellow",
+        )
+        return
+
+    msg = "enable_output_json is enabled, printing output to {output_directory}...".format(  # noqa: E501
+        output_directory=DEFAULT_OUTPUT_JSON_DIRECTORY
+    )
+    click.secho(
+        msg,
+        fg="green",
+    )
+
+    output_path = Path(DEFAULT_OUTPUT_JSON_DIRECTORY).resolve()
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    with open(
+        output_path.joinpath("output-model-outputs.json"), "w"
+    ) as output_file:
+        json.dump(
+            cli_context.flat_onnx.onnx_outputs,
+            output_file,
+            indent=cli_config.json_indent_size,
         )
 
-        output_path = Path(DEFAULT_OUTPUT_JSON_DIRECTORY).resolve()
-        output_path.mkdir(parents=True, exist_ok=True)
+    with open(
+        output_path.joinpath("output-model-inputs.json"), "w"
+    ) as output_file:
+        json.dump(
+            cli_context.flat_onnx.onnx_inputs,
+            output_file,
+            indent=cli_config.json_indent_size,
+        )
 
-        with open(
-            output_path.joinpath("output-model-outputs.json"), "w"
-        ) as output_file:
-            json.dump(
-                cli_context.flat_onnx.onnx_outputs,
-                output_file,
-                indent=cli_config.json_indent_size,
-            )
-
-        with open(
-            output_path.joinpath("output-model-inputs.json"), "w"
-        ) as output_file:
-            json.dump(
-                cli_context.flat_onnx.onnx_inputs,
-                output_file,
-                indent=cli_config.json_indent_size,
-            )
-
-        with open(
-            output_path.joinpath("output-model-nodes.json"), "w"
-        ) as output_file:
-            json.dump(
-                cli_context.flat_onnx.onnx_graph_nodes,
-                output_file,
-                indent=cli_config.json_indent_size,
-            )
+    with open(
+        output_path.joinpath("output-model-nodes.json"), "w"
+    ) as output_file:
+        json.dump(
+            cli_context.flat_onnx.onnx_graph_nodes,
+            output_file,
+            indent=cli_config.json_indent_size,
+        )
 
 
 if __name__ == "__main__":
