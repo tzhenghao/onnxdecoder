@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class FlatOnnx:
-    onnx_graph_nodes: list[dict[str, Any]]
+    onnx_graph_node_names_list: list[str]
+    onnx_graph_node_name_to_attributes: dict[str, Any]
     onnx_inputs: dict[str, Any]
     onnx_outputs: dict[str, Any]
 
@@ -83,9 +84,10 @@ def cli(
 
 
 def parse_onnx_graph(cli_context: CLIContext):
-    onnx_graph_nodes = []
+    onnx_graph_node_names_list = []
     onnx_name_to_inputs: dict[str, Any] = {}
     onnx_name_to_outputs: dict[str, Any] = {}
+    onnx_graph_node_name_to_attributes: dict[str, Any] = {}
 
     for node in cli_context.onnx_model.graph.node:
         click.secho("name: {name}".format(name=node.name), fg="yellow")
@@ -95,7 +97,10 @@ def parse_onnx_graph(cli_context: CLIContext):
         click.secho("input: {input}".format(input=node.input), fg="yellow")
         click.secho("output: {output}".format(output=node.output), fg="yellow")
 
-        onnx_graph_nodes.append({"name": node.name, "op_type": node.op_type})
+        onnx_graph_node_names_list.append(node.name)
+        onnx_graph_node_name_to_attributes[node.name] = {
+            "op_type": node.op_type
+        }
         onnx_name_to_inputs[node.name] = [
             input_val for input_val in node.input
         ]
@@ -103,10 +108,82 @@ def parse_onnx_graph(cli_context: CLIContext):
             output_val for output_val in node.output
         ]
     cli_context.flat_onnx = FlatOnnx(
-        onnx_graph_nodes=onnx_graph_nodes,
+        onnx_graph_node_names_list=onnx_graph_node_names_list,
+        onnx_graph_node_name_to_attributes=onnx_graph_node_name_to_attributes,
         onnx_inputs=onnx_name_to_inputs,
         onnx_outputs=onnx_name_to_outputs,
     )
+    rebuild_nested_onnx_graph_representation(cli_context=cli_context)
+
+
+def rebuild_nested_onnx_graph_representation(cli_context: CLIContext):
+    logger.info("Remapping to nested graph representation...")
+
+    input_to_output_node_dict: dict[str, Any] = {}
+    for (
+        node_name,
+        node_input_list,
+    ) in cli_context.flat_onnx.onnx_inputs.items():
+        for input_node in node_input_list:
+            # If the input_node is not already in the nested graph, we create it
+            if input_node not in input_to_output_node_dict:
+                input_to_output_node_dict[input_node] = [node_name]
+            else:
+                # Append for ones that already exist.
+                input_to_output_node_dict[input_node].append(node_name)
+
+    with open("input_to_output_node_dict.json", "w") as output_file:
+        json.dump(
+            input_to_output_node_dict,
+            output_file,
+            indent=2,
+        )
+
+    seen_nodes = set()
+    curr_node_name = cli_context.flat_onnx.onnx_graph_node_names_list[0]
+
+    total_nested_graph = rebuild_nested_graph_helper(
+        input_to_output_node_dict=input_to_output_node_dict,
+        onnx_graph_node_name_to_attributes=cli_context.flat_onnx.onnx_graph_node_name_to_attributes,
+        seen_nodes=seen_nodes,
+        curr_node_name=curr_node_name,
+    )
+    with open("total_nested_graph.json", "w") as output_file:
+        json.dump(
+            total_nested_graph,
+            output_file,
+            indent=2,
+        )
+
+
+def rebuild_nested_graph_helper(
+    input_to_output_node_dict,
+    onnx_graph_node_name_to_attributes,
+    seen_nodes,
+    curr_node_name: str,
+):
+    if curr_node_name in seen_nodes:
+        return
+
+    new_node = dict()
+    new_node["name"] = curr_node_name
+    new_node["attributes"] = onnx_graph_node_name_to_attributes[curr_node_name]
+    seen_nodes.add(curr_node_name)
+    new_node["children"] = []
+
+    # Skip if non-existent since we're on the leaf node(s).
+    if curr_node_name in input_to_output_node_dict:
+        for child_name in input_to_output_node_dict[curr_node_name]:
+            new_node["children"].append(
+                rebuild_nested_graph_helper(
+                    input_to_output_node_dict=input_to_output_node_dict,
+                    onnx_graph_node_name_to_attributes=onnx_graph_node_name_to_attributes,
+                    seen_nodes=seen_nodes,
+                    curr_node_name=child_name,
+                )
+            )
+
+    return new_node
 
 
 def generate_outputs(cli_config: CLIConfig, cli_context: CLIContext):
@@ -136,7 +213,7 @@ def generate_outputs(cli_config: CLIConfig, cli_context: CLIContext):
         return
 
     with open(
-        output_path.joinpath("output-model-outputs.json"), "w"
+        output_path.joinpath("onnx_outputs.json"), "w"
     ) as output_file:
         json.dump(
             cli_context.flat_onnx.onnx_outputs,
@@ -145,7 +222,7 @@ def generate_outputs(cli_config: CLIConfig, cli_context: CLIContext):
         )
 
     with open(
-        output_path.joinpath("output-model-inputs.json"), "w"
+        output_path.joinpath("onnx_inputs.json"), "w"
     ) as output_file:
         json.dump(
             cli_context.flat_onnx.onnx_inputs,
@@ -154,10 +231,10 @@ def generate_outputs(cli_config: CLIConfig, cli_context: CLIContext):
         )
 
     with open(
-        output_path.joinpath("output-model-nodes.json"), "w"
+        output_path.joinpath("onnx_graph_node_names_list.json"), "w"
     ) as output_file:
         json.dump(
-            cli_context.flat_onnx.onnx_graph_nodes,
+            cli_context.flat_onnx.onnx_graph_node_names_list,
             output_file,
             indent=cli_config.json_indent_size,
         )
