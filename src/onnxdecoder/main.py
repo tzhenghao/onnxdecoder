@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import Any
 
 # Third party imports
-from pydantic.dataclasses import dataclass
 import click
 import onnx
+from pydantic.dataclasses import dataclass
 
 DEFAULT_INPUT_ONNX_FILE_PATH = "../../assets/resnet50-v2-7.onnx"
 DEFAULT_OUTPUT_JSON_DIRECTORY = "outputs"
@@ -127,6 +127,13 @@ def generate_outputs(cli_config: CLIConfig, cli_context: CLIContext):
 
     output_path = Path(DEFAULT_OUTPUT_JSON_DIRECTORY).resolve()
     output_path.mkdir(parents=True, exist_ok=True)
+
+    if not isinstance(cli_context.flat_onnx, FlatOnnx):
+        msg = "Internal: Expected flat_onnx to be of FlatOnnx type, got {} instead".format(  # noqa: E501
+            type(cli_context.flat_onnx)
+        )
+        logger.error(msg)
+        return
 
     with open(
         output_path.joinpath("output-model-outputs.json"), "w"
