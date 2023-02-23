@@ -107,6 +107,17 @@ def parse_onnx_graph(cli_context: CLIContext):
         onnx_name_to_outputs[node.name] = [
             output_val for output_val in node.output
         ]
+
+        attribute_names_list = []
+        # Loop over all attributes...
+        for attribute in node.attribute:
+            attribute_names_list.append(attribute.name)
+
+        click.secho(
+            "attributes: {attributes}".format(
+                attributes=attribute_names_list, fg="yellow"
+            )
+        )
     cli_context.flat_onnx = FlatOnnx(
         onnx_graph_node_names_list=onnx_graph_node_names_list,
         onnx_graph_node_name_to_attributes=onnx_graph_node_name_to_attributes,
@@ -212,18 +223,14 @@ def generate_outputs(cli_config: CLIConfig, cli_context: CLIContext):
         logger.error(msg)
         return
 
-    with open(
-        output_path.joinpath("onnx_outputs.json"), "w"
-    ) as output_file:
+    with open(output_path.joinpath("onnx_outputs.json"), "w") as output_file:
         json.dump(
             cli_context.flat_onnx.onnx_outputs,
             output_file,
             indent=cli_config.json_indent_size,
         )
 
-    with open(
-        output_path.joinpath("onnx_inputs.json"), "w"
-    ) as output_file:
+    with open(output_path.joinpath("onnx_inputs.json"), "w") as output_file:
         json.dump(
             cli_context.flat_onnx.onnx_inputs,
             output_file,
