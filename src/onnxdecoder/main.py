@@ -22,6 +22,7 @@ class FlatOnnx:
     onnx_graph_node_name_to_attributes: dict[str, Any]
     onnx_inputs: dict[str, Any]
     onnx_outputs: dict[str, Any]
+    onnx_attributes: dict[str, Any]
 
 
 @dataclass
@@ -88,6 +89,7 @@ def parse_onnx_graph(cli_context: CLIContext):
     onnx_name_to_inputs: dict[str, Any] = {}
     onnx_name_to_outputs: dict[str, Any] = {}
     onnx_graph_node_name_to_attributes: dict[str, Any] = {}
+    onnx_name_to_attributes: dict[str, Any] = {}
 
     for node in cli_context.onnx_model.graph.node:
         click.secho("name: {name}".format(name=node.name), fg="yellow")
@@ -113,6 +115,7 @@ def parse_onnx_graph(cli_context: CLIContext):
         for attribute in node.attribute:
             attribute_names_list.append(attribute.name)
 
+        onnx_name_to_attributes[node.name] = attribute_names_list
         click.secho(
             "attributes: {attributes}".format(
                 attributes=attribute_names_list, fg="yellow"
@@ -123,6 +126,7 @@ def parse_onnx_graph(cli_context: CLIContext):
         onnx_graph_node_name_to_attributes=onnx_graph_node_name_to_attributes,
         onnx_inputs=onnx_name_to_inputs,
         onnx_outputs=onnx_name_to_outputs,
+        onnx_attributes=onnx_name_to_attributes,
     )
     rebuild_nested_onnx_graph_representation(cli_context=cli_context)
 
@@ -233,6 +237,13 @@ def generate_outputs(cli_config: CLIConfig, cli_context: CLIContext):
     with open(output_path.joinpath("onnx_inputs.json"), "w") as output_file:
         json.dump(
             cli_context.flat_onnx.onnx_inputs,
+            output_file,
+            indent=cli_config.json_indent_size,
+        )
+
+    with open(output_path.joinpath("onnx_attributes.json"), "w") as output_file:
+        json.dump(
+            cli_context.flat_onnx.onnx_attributes,
             output_file,
             indent=cli_config.json_indent_size,
         )
