@@ -68,10 +68,9 @@ def cli(
     json_indent_size,
 ):
     onnx_model = onnx.load(input_onnx_file)
-    click.secho(
-        "IR version: {ir_version}".format(ir_version=onnx_model.ir_version),
-        fg="yellow",
-    )
+
+    print_onnx_model_info(onnx_model=onnx_model)
+
     cli_config = CLIConfig(
         input_onnx_file=input_onnx_file,
         verbose=verbose,
@@ -82,13 +81,71 @@ def cli(
     cli_context = CLIContext(
         onnx_model=onnx_model,
     )
-
     parse_onnx_graph(cli_config=cli_config, cli_context=cli_context)
+
+    parse_onnx_graph_nodes(cli_config=cli_config, cli_context=cli_context)
 
     generate_outputs(cli_config=cli_config, cli_context=cli_context)
 
 
+def print_onnx_model_info(onnx_model):
+    click.secho("---------- ONNX MODELPROTO ------------", fg="yellow")
+
+    click.secho(
+        "IR version: {ir_version}".format(ir_version=onnx_model.ir_version),
+        fg="yellow",
+    )
+    click.secho(
+        "Producer name: {producer_name}".format(
+            producer_name=onnx_model.producer_name
+        ),
+        fg="yellow",
+    )
+    click.secho(
+        "Producer version: {producer_version}".format(
+            producer_version=onnx_model.producer_version
+        ),
+        fg="yellow",
+    )
+    click.secho(
+        "Domain: {domain}".format(domain=onnx_model.domain),
+        fg="yellow",
+    )
+    click.secho(
+        "Model version: {model_version}".format(
+            model_version=onnx_model.model_version
+        ),
+        fg="yellow",
+    )
+    click.secho(
+        "Doc string: {doc_string}".format(doc_string=onnx_model.doc_string),
+        fg="yellow",
+    )
+
+
 def parse_onnx_graph(cli_config: CLIConfig, cli_context: CLIContext):
+    click.secho("----------- ONNX GRAPHPROTO ------------", fg="yellow")
+    onnx_graph = cli_context.onnx_model.graph
+
+    click.secho(
+        "Name: {name}".format(name=onnx_graph.name),
+        fg="yellow",
+    )
+    click.secho(
+        "Doc string: {doc_string}".format(doc_string=onnx_graph.doc_string),
+        fg="yellow",
+    )
+    # click.secho(
+    #     "Inputs: {inputs}".format(inputs=onnx_graph.input),
+    #     fg="yellow",
+    # )
+    # click.secho(
+    #     "Outputs: {outputs}".format(outputs=onnx_graph.output),
+    #     fg="yellow",
+    # )q
+
+
+def parse_onnx_graph_nodes(cli_config: CLIConfig, cli_context: CLIContext):
     onnx_graph_node_names_list = []
     onnx_name_to_inputs: dict[str, Any] = {}
     onnx_name_to_outputs: dict[str, Any] = {}
