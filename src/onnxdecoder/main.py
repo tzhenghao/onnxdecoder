@@ -28,6 +28,7 @@ class FlatOnnx:
 @dataclass
 class CLIConfig:
     input_onnx_file: str
+    verbose: int
     output_directory: str
     enable_output_json: bool
     json_indent_size: int
@@ -41,6 +42,7 @@ class CLIContext:
 
 @click.command()
 @click.argument("input_onnx_file")
+@click.option("-v", "--verbose", count=True)
 @click.option(
     "--output_directory",
     default=DEFAULT_OUTPUT_JSON_DIRECTORY,
@@ -60,6 +62,7 @@ class CLIContext:
 )
 def cli(
     input_onnx_file,
+    verbose,
     output_directory,
     enable_output_json,
     json_indent_size,
@@ -71,6 +74,7 @@ def cli(
     )
     cli_config = CLIConfig(
         input_onnx_file=input_onnx_file,
+        verbose=verbose,
         output_directory=output_directory,
         enable_output_json=enable_output_json,
         json_indent_size=json_indent_size,
@@ -79,12 +83,12 @@ def cli(
         onnx_model=onnx_model,
     )
 
-    parse_onnx_graph(cli_context=cli_context)
+    parse_onnx_graph(cli_config=cli_config, cli_context=cli_context)
 
     generate_outputs(cli_config=cli_config, cli_context=cli_context)
 
 
-def parse_onnx_graph(cli_context: CLIContext):
+def parse_onnx_graph(cli_config: CLIConfig, cli_context: CLIContext):
     onnx_graph_node_names_list = []
     onnx_name_to_inputs: dict[str, Any] = {}
     onnx_name_to_outputs: dict[str, Any] = {}
@@ -92,12 +96,15 @@ def parse_onnx_graph(cli_context: CLIContext):
     onnx_name_to_attributes: dict[str, Any] = {}
 
     for node in cli_context.onnx_model.graph.node:
-        click.secho("name: {name}".format(name=node.name), fg="yellow")
-        click.secho(
-            "op_type: {op_type}".format(op_type=node.op_type), fg="yellow"
-        )
-        click.secho("input: {input}".format(input=node.input), fg="yellow")
-        click.secho("output: {output}".format(output=node.output), fg="yellow")
+        if cli_config.verbose >= 1:
+            click.secho("name: {name}".format(name=node.name), fg="yellow")
+            click.secho(
+                "op_type: {op_type}".format(op_type=node.op_type), fg="yellow"
+            )
+            click.secho("input: {input}".format(input=node.input), fg="yellow")
+            click.secho(
+                "output: {output}".format(output=node.output), fg="yellow"
+            )
 
         onnx_graph_node_names_list.append(node.name)
         onnx_graph_node_name_to_attributes[node.name] = {
@@ -116,11 +123,12 @@ def parse_onnx_graph(cli_context: CLIContext):
             attribute_names_list.append(attribute.name)
 
         onnx_name_to_attributes[node.name] = attribute_names_list
-        click.secho(
-            "attributes: {attributes}".format(
-                attributes=attribute_names_list, fg="yellow"
+        if cli_config.verbose >= 1:
+            click.secho(
+                "attributes: {attributes}".format(
+                    attributes=attribute_names_list, fg="yellow"
+                )
             )
-        )
     cli_context.flat_onnx = FlatOnnx(
         onnx_graph_node_names_list=onnx_graph_node_names_list,
         onnx_graph_node_name_to_attributes=onnx_graph_node_name_to_attributes,
@@ -241,7 +249,9 @@ def generate_outputs(cli_config: CLIConfig, cli_context: CLIContext):
             indent=cli_config.json_indent_size,
         )
 
-    with open(output_path.joinpath("onnx_attributes.json"), "w") as output_file:
+    with open(
+        output_path.joinpath("onnx_attributes.json"), "w"
+    ) as output_file:
         json.dump(
             cli_context.flat_onnx.onnx_attributes,
             output_file,
