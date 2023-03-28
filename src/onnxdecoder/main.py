@@ -142,7 +142,7 @@ def parse_onnx_graph(cli_config: CLIConfig, cli_context: CLIContext):
     # click.secho(
     #     "Outputs: {outputs}".format(outputs=onnx_graph.output),
     #     fg="yellow",
-    # )q
+    # )
 
 
 def parse_onnx_graph_nodes(cli_config: CLIConfig, cli_context: CLIContext):
