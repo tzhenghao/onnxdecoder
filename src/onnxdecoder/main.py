@@ -7,6 +7,7 @@ from typing import Any
 # Third party imports
 import click
 import onnx
+from google.protobuf import json_format
 from pydantic.dataclasses import dataclass
 
 DEFAULT_INPUT_ONNX_FILE_PATH = "../../assets/resnet50-v2-7.onnx"
@@ -177,6 +178,7 @@ def parse_onnx_graph_nodes(cli_config: CLIConfig, cli_context: CLIContext):
         attribute_names_list = []
         # Loop over all attributes...
         for attribute in node.attribute:
+            print("ATTRIBUTE: {}".format(json_format.MessageToDict(attribute)))
             attribute_names_list.append(attribute.name)
 
         onnx_name_to_attributes[node.name] = attribute_names_list
